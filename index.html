@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Home Dashboard</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box}
+body{background:linear-gradient(145deg,#172633 0%,#0d141b 55%,#151b22 100%)}
+#wrap{height:100%;padding:18px 24px 14px;position:relative}
+.top{text-align:center;height:42%}
+#time{font-size:132px;font-weight:200;letter-spacing:-6px;line-height:.92;text-shadow:0 2px 18px rgba(0,0,0,.25)}
+#date{font-size:32px;margin-top:12px;font-weight:400}
+#place{font-size:16px;color:#b7c6d4;margin-top:7px}
+.weather{height:37%;display:table;width:100%;table-layout:fixed;border-spacing:10px 0}
+.card{display:table-cell;vertical-align:middle;text-align:center;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px}
+.card.current{width:30%}
+.card.forecast{width:23.3%}
+.label{font-size:15px;color:#aebdca;text-transform:uppercase;letter-spacing:1px}
+.icon{font-size:43px;line-height:1.15;margin:5px 0}
+#temp{font-size:55px;font-weight:250;line-height:1}
+.condition{font-size:18px;margin-top:5px}
+.range{font-size:21px;margin-top:4px}
+.detail{font-size:13px;color:#afbdc9;margin-top:5px}
+.sun{font-size:13px;color:#9eafbd;margin-top:7px}
+.news{position:absolute;left:24px;right:24px;bottom:14px;height:15%;padding:11px 16px;background:rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.09);border-radius:14px;overflow:hidden}
+.newsHead{font-size:12px;letter-spacing:1.3px;color:#8fa7ba;margin-bottom:7px}
+.newsItem{display:none;font-size:18px;line-height:1.35}
+.newsItem:first-child{display:block}
+.newsMeta{font-size:12px;color:#8294a3;margin-top:4px}
+@media(max-width:850px){
+ #wrap{padding:14px 18px 12px}
+ #time{font-size:112px}
+ #date{font-size:28px}
+ .weather{border-spacing:7px 0}
+ .card{padding:7px;border-radius:15px}
+ .icon{font-size:36px}
+ #temp{font-size:47px}
+ .range{font-size:18px}
+ .condition{font-size:15px}
+ .news{left:18px;right:18px;bottom:10px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div class="top">
+  <div id="time">--:--</div>
+  <div id="date">Loading…</div>
+  <div id="place">CHIRNSIDE PARK · MELBOURNE</div>
+ </div>
+
+ <div class="weather">
+  <div class="card current">
+   <div class="label">NOW</div>
+   <div class="icon" id="nowIcon">☀️</div>
+   <div id="temp">--°</div>
+   <div class="condition" id="weatherText">Loading…</div>
+   <div class="sun" id="sun">☀︎ --:-- &nbsp; ☾ --:--</div>
+  </div>
+  <div class="card forecast">
+   <div class="label">TODAY</div>
+   <div class="icon" id="icon0">☀️</div>
+   <div class="range" id="range0">-- / --°</div>
+   <div class="detail" id="cond0">--</div>
+  </div>
+  <div class="card forecast">
+   <div class="label">TOMORROW</div>
+   <div class="icon" id="icon1">☁️</div>
+   <div class="range" id="range1">-- / --°</div>
+   <div class="detail" id="cond1">--</div>
+  </div>
+  <div class="card forecast">
+   <div class="label" id="day2">TUESDAY</div>
+   <div class="icon" id="icon2">🌧️</div>
+   <div class="range" id="range2">-- / --°</div>
+   <div class="detail" id="cond2">--</div>
+  </div>
+ </div>
+
+ <div class="news">
+  <div class="newsHead">ABC NEWS · LATEST</div>
+  <div id="news"><div class="newsItem">Loading latest headlines…</div></div>
+ </div>
+</div>
+
+<script>
+(function(){
+function pad(n){return n<10?"0"+n:n}
+function clock(){
+ var d=new Date(),days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+ months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+ document.getElementById("time").innerHTML=pad(d.getHours())+":"+pad(d.getMinutes());
+ document.getElementById("date").innerHTML=days[d.getDay()]+" · "+d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
+ document.getElementById("day2").innerHTML=days[(d.getDay()+2)%7].toUpperCase();
+}
+clock();setInterval(clock,1000);
+
+function xhr(url,ok,fail){
+ var r=new XMLHttpRequest();
+ r.onreadystatechange=function(){if(r.readyState===4){if(r.status>=200&&r.status<300){try{ok(JSON.parse(r.responseText))}catch(e){if(fail)fail()}}else if(fail)fail()}};
+ r.open("GET",url,true);r.send();
+}
+function info(c){
+ var x={0:["Clear","☀️"],1:["Mostly clear","🌤️"],2:["Partly cloudy","⛅"],3:["Cloudy","☁️"],45:["Fog","🌫️"],48:["Fog","🌫️"],51:["Light drizzle","🌦️"],53:["Drizzle","🌦️"],55:["Heavy drizzle","🌧️"],61:["Light rain","🌦️"],63:["Rain","🌧️"],65:["Heavy rain","🌧️"],71:["Light snow","🌨️"],73:["Snow","🌨️"],75:["Heavy snow","🌨️"],80:["Showers","🌦️"],81:["Showers","🌧️"],82:["Heavy showers","🌧️"],95:["Thunderstorm","⛈️"],96:["Thunderstorm","⛈️"],99:["Thunderstorm","⛈️"]};
+ return x[c]||["Weather","🌤️"];
+}
+function weather(){
+ var u="https://api.open-meteo.com/v1/forecast?latitude=-37.754&longitude=145.326&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=Australia%2FMelbourne&forecast_days=3";
+ xhr(u,function(j){
+  var z=info(j.current.weather_code);
+  document.getElementById("temp").innerHTML=Math.round(j.current.temperature_2m)+"°";
+  document.getElementById("weatherText").innerHTML=z[0];document.getElementById("nowIcon").innerHTML=z[1];
+  for(var i=0;i<3;i++){var a=info(j.daily.weather_code[i]);document.getElementById("icon"+i).innerHTML=a[1];document.getElementById("cond"+i).innerHTML=a[0];document.getElementById("range"+i).innerHTML=Math.round(j.daily.temperature_2m_min[i])+"° / "+Math.round(j.daily.temperature_2m_max[i])+"°";}
+  var sr=(j.daily.sunrise[0]||"").split("T")[1]||"--:--",ss=(j.daily.sunset[0]||"").split("T")[1]||"--:--";
+  document.getElementById("sun").innerHTML="☀︎ "+sr+" &nbsp; ☾ "+ss;
+ },function(){document.getElementById("weatherText").innerHTML="Weather unavailable"});
+}
+var newsIndex=0;
+function rotateNews(){
+ var a=document.getElementsByClassName("newsItem");if(!a.length)return;
+ for(var i=0;i<a.length;i++)a[i].style.display="none";
+ newsIndex=(newsIndex+1)%a.length;a[newsIndex].style.display="block";
+}
+function clean(s){var d=document.createElement("div");d.innerHTML=s||"";return d.textContent||d.innerText||""}
+function news(){
+ var f="https://www.abc.net.au/news/feed/51120/rss.xml",u="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(f);
+ xhr(u,function(j){
+  var b=document.getElementById("news");b.innerHTML="";
+  if(j.items&&j.items.length){for(var i=0;i<Math.min(8,j.items.length);i++){var d=document.createElement("div");d.className="newsItem";d.innerHTML=clean(j.items[i].title)+'<div class="newsMeta">ABC News</div>';b.appendChild(d)}newsIndex=0}
+  else b.innerHTML='<div class="newsItem">News temporarily unavailable.</div>';
+ },function(){document.getElementById("news").innerHTML='<div class="newsItem">News temporarily unavailable.</div>'});
+}
+weather();news();setInterval(weather,30*60*1000);setInterval(news,15*60*1000);setInterval(rotateNews,12*1000);
+})();
+</script>
+</body>
+</html>
