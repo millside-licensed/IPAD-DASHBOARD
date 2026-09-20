@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Home Info Board</title>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;background:#0b0d10;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+*{box-sizing:border-box}
+#wrap{width:100%;height:100%;padding:22px 28px 14px 28px;position:relative}
+.main{height:78%;text-align:center}
+#time{font-size:150px;font-weight:300;letter-spacing:-6px;line-height:1;margin-top:5px}
+#date{font-size:42px;font-weight:400;margin-top:8px;color:#eef1f4}
+#lunar{font-size:21px;margin-top:8px;color:#9da8b3}
+.weatherBox{margin-top:24px}
+#temp{font-size:62px;font-weight:300}
+#weatherText{font-size:28px;margin-left:10px}
+.small{display:inline-block;font-size:18px;color:#b7c0ca;line-height:1.6;margin:3px 12px}
+.newsArea{position:absolute;left:28px;right:28px;bottom:18px;height:18%;border-top:1px solid #2a2f36;padding-top:10px;overflow:hidden}
+.sectionTitle{font-size:15px;color:#8f9aa7;margin-bottom:4px}
+#news{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.newsItem{display:none;font-size:18px;line-height:1.4}
+.newsItem:first-child{display:block}
+.newsMeta{display:inline;font-size:13px;color:#8f9aa7;margin-left:8px}
+#status{position:absolute;bottom:3px;right:10px;font-size:10px;color:#505a65}
+@media (max-width:850px){
+ #wrap{padding:16px 20px 12px 20px}
+ #time{font-size:126px}
+ #date{font-size:34px}
+ #temp{font-size:52px}
+ #weatherText{font-size:24px}
+ .small{font-size:16px}
+ .newsArea{left:20px;right:20px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="main">
+    <div id="time">--:--</div>
+    <div id="date">Loading...</div>
+    <div id="lunar">Chirnside Park · Melbourne</div>
+    <div class="weatherBox">
+      <div><span id="temp">--°</span><span id="weatherText">Loading weather…</span></div>
+      <div class="small" id="today">Today: --</div>
+      <div class="small" id="tomorrow">Tomorrow: --</div><div class="small" id="day3">Day after tomorrow: --</div>
+      <div class="small" id="sun">Sunrise / Sunset: --</div>
+    </div>
+  </div>
+  <div class="newsArea">
+    <div class="sectionTitle">NEWS · ABC Australia</div>
+    <div id="news"><div class="newsItem">Loading headlines…</div></div>
+  </div>
+  <div id="status">Auto refresh</div>
+</div>
+
+<script>
+(function(){
+  function pad(n){return n<10?"0"+n:n;}
+  function updateClock(){
+    var d=new Date();
+    var days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    var months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+    document.getElementById("time").innerHTML=pad(d.getHours())+":"+pad(d.getMinutes());
+    document.getElementById("date").innerHTML=days[d.getDay()]+" · "+d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+
+  function xhr(url, ok, fail){
+    var r=new XMLHttpRequest();
+    r.onreadystatechange=function(){
+      if(r.readyState===4){
+        if(r.status>=200 && r.status<300){try{ok(JSON.parse(r.responseText));}catch(e){if(fail)fail();}}
+        else if(fail)fail();
+      }
+    };
+    r.open("GET",url,true);
+    r.send();
+  }
+
+  function weatherCode(c){
+    var m={
+      0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",
+      45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",
+      61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",
+      80:"Showers",81:"Showers",82:"Heavy showers",95:"Thunderstorm",96:"Thunderstorm",99:"Thunderstorm"
+    };
+    return m[c]||"Weather";
+  }
+
+  function loadWeather(){
+    var url="https://api.open-meteo.com/v1/forecast?latitude=-37.754&longitude=145.326&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=Australia%2FMelbourne&forecast_days=3";
+    xhr(url,function(j){
+      if(j.current){
+        document.getElementById("temp").innerHTML=Math.round(j.current.temperature_2m)+"°";
+        document.getElementById("weatherText").innerHTML=weatherCode(j.current.weather_code);
+      }
+      if(j.daily){
+        document.getElementById("today").innerHTML="Today: "+Math.round(j.daily.temperature_2m_min[0])+"–"+Math.round(j.daily.temperature_2m_max[0])+"°C · "+weatherCode(j.daily.weather_code[0]);
+        document.getElementById("tomorrow").innerHTML="Tomorrow: "+Math.round(j.daily.temperature_2m_min[1])+"–"+Math.round(j.daily.temperature_2m_max[1])+"°C · "+weatherCode(j.daily.weather_code[1]);
+        document.getElementById("day3").innerHTML="Day after tomorrow: "+Math.round(j.daily.temperature_2m_min[2])+"–"+Math.round(j.daily.temperature_2m_max[2])+"°C · "+weatherCode(j.daily.weather_code[2]);
+        var sr=(j.daily.sunrise[0]||"").split("T")[1]||"--";
+        var ss=(j.daily.sunset[0]||"").split("T")[1]||"--";
+        document.getElementById("sun").innerHTML="Sunrise "+sr+" · Sunset "+ss;
+      }
+    },function(){
+      document.getElementById("weatherText").innerHTML="Weather unavailable";
+    });
+  }
+
+  function clean(s){
+    var d=document.createElement("div"); d.innerHTML=s||""; return d.textContent||d.innerText||"";
+  }
+
+  function loadNews(){
+    var feed="https://www.abc.net.au/news/feed/51120/rss.xml";
+    var url="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(feed);
+    xhr(url,function(j){
+      var box=document.getElementById("news");
+      box.innerHTML="";
+      if(j.items && j.items.length){
+        for(var i=0;i<Math.min(7,j.items.length);i++){
+          var it=j.items[i];
+          var div=document.createElement("div");
+          div.className="newsItem";
+          div.innerHTML=clean(it.title)+'<div class="newsMeta">ABC News</div>';
+          box.appendChild(div);
+        }
+      }else{
+        box.innerHTML='<div class="newsItem">News feed temporarily unavailable.</div>';
+      }
+    },function(){
+      document.getElementById("news").innerHTML='<div class="newsItem">News feed temporarily unavailable.</div>';
+    });
+  }
+
+  loadWeather();
+  loadNews();
+  setInterval(loadWeather,30*60*1000);
+  setInterval(loadNews,15*60*1000);
+})();
+</script>
+</body>
+</html>
